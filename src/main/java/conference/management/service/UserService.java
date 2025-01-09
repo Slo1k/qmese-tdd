@@ -51,13 +51,36 @@ public class UserService {
 
     @Transactional
     public User updateUser(String email, String newEmail) {
-        //TODO: provide implementation for updating user
+        Optional<UserEntity> possibleUser = userRepository.findByEmail(email);
+        if (possibleUser.isEmpty()) {
+            throw new IllegalArgumentException("User with given email was not found.");
+        }
+        if (newEmail.isBlank()) {
+            throw new IllegalArgumentException("New email cannot be empty.");
+        }
+        if (newEmail.equals(email)) {
+            throw new IllegalArgumentException("New email cannot be the same as the old one.");
+        }
+        possibleUser.get().setEmail(newEmail);
+        userRepository.save(possibleUser.get());
         return null;
     }
 
     @Transactional
     public void registerForLecture(String login, LectureRequest lectureRequest) {
-        //TODO: provide implementation for lecture registration
+        Optional<UserEntity> possibleUser = userRepository.findByLogin(login);
+        if (possibleUser.isEmpty()) {
+            throw new IllegalArgumentException("Invalid login provided.");
+        }
+        UserEntity userEntity = possibleUser.get();
+        LectureEntity lectureEntity = findLecture(lectureRequest.pathNumber(), lectureRequest.lectureNumber());
+        if (userEntity.getLectures().contains(lectureEntity)) {
+            throw new IllegalArgumentException("User is already registered for this lecture.");
+        }
+        Set<LectureEntity> lectures = userEntity.getLectures();
+        lectures.add(lectureEntity);
+        userEntity.setLectures(lectures);
+        userRepository.save(userEntity);
     }
 
     @Transactional
